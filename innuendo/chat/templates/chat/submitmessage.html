@@ -1,0 +1,13 @@
+<h1> SUBMIT A MESSAGE </h1>
+
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'chat:submitmessage_aux' %}" method = "post">
+	{% csrf_token %}
+	First name: <input type="text" name="firstname"/>
+	<br>
+	Last name: <input type="text" name="lastname"/>
+	<br>
+	Your message: <input type="text" name="message"/>
+	<input type="submit" value="submit"/>
+</form>

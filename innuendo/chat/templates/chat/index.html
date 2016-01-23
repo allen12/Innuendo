@@ -1,0 +1,15 @@
+{% if latest_message_list %}
+    <ul>
+    {% for message in latest_message_list %}
+    	<h3> {{ message.text }}</h3> {{ message.user }} at {{message.timestamp}}
+    {% endfor %}
+    </ul>
+{% else %}
+    <p>No messages are available.</p>
+{% endif %}
+
+<form action="{% url 'chat:submitmessage' %}" method = "post">
+	{% csrf_token %}
+
+	<input type="submit" value="Post a message!"/>
+</form>
