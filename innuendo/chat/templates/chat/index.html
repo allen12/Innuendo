@@ -1,15 +1,26 @@
-{% if latest_message_list %}
-    <ul>
-    {% for message in latest_message_list %}
-    	<h3> {{ message.text }}</h3> {{ message.user }} at {{message.timestamp}}
-    {% endfor %}
-    </ul>
-{% else %}
-    <p>No messages are available.</p>
-{% endif %}
+<h1> Welcome to Innuendo! </h1>
 
-<form action="{% url 'chat:submitmessage' %}" method = "post">
+{% if error_message %}<p><strong>{{ error_message }}</strong></p>{% endif %}
+
+<form action="{% url 'chat:login' %}" method = "post">
+	{% csrf_token %}
+	Username: <input type="text" name="username"/> <br>
+	Password : <input type="password" name="password"/> <br>
+
+	<input type="submit" value="LOGIN"/>
+</form>
+
+<br><br>
+
+<form action="{% url 'chat:register' %}" method = "post">
 	{% csrf_token %}
 
-	<input type="submit" value="Post a message!"/>
+	Username: <input type="text" name="username"/><br>
+	First name: <input type="text" name="first_name"/><br>
+	Last name: <input type="text" name="last_name"/><br>
+	Email: <input type="text" name="email"/><br>
+	Password: <input type="password" name="password"/><br>
+	Password again: <input type="password" name="passwordagain"/><br>
+
+	<input type="submit" value="REGISTER"/>
 </form>

@@ -6,16 +6,29 @@ from django.core.urlresolvers import reverse
 
 from datetime import datetime
 
-from .models import Message, User
+from .models import Message, User, Group
 
-# Create your views here.
+from django.contrib import auth
+from django.contrib.auth.models import User as Account
+
+
 def index(request):
-	latest_message_list = Message.objects.all()
+	return render(request, "chat/index.html", None)
+
+def chat(request):
+	if not request.user.is_authenticated():
+		return render(request, "chat/index.html", {"error_message": "Please login."})
+
+	account = request.user
+
+	latest_message_list = Message.objects.all().order_by("-id")[:15]
 	context = {
 		"latest_message_list": latest_message_list,
+		"first_name": account.first_name,
+		"last_name": account.last_name,
 	}
 
-	return render(request, "chat/index.html", context)
+	return render(request, "chat/chat.html", context)
 
 def detail(request, message_id):
 	try:
@@ -26,27 +39,51 @@ def detail(request, message_id):
 	return render(request, "chat/detail.html", {"message": message})
 
 def submitmessage(request):
-	return render(request, "chat/submitmessage.html", {"error message": None})
+	if not request.user.is_authenticated():
+		return render(request, "chat/index.html", {"error_message": "Please login."})
 
-def submitmessage_aux(request):
+	account = request.user
 
-	# if any fields are blank, then reload the page!
-	results = [request.POST.get("firstname"), request.POST.get("lastname"), request.POST.get("message")]
-	for i in results:
-		if i is None or i == "":
-			return submitmessage(request)
-
-
-	us = User(first_name = request.POST.get("firstname"), last_name = request.POST.get("lastname"), color = "FF0000")
-
+	us = User(first_name = account.first_name, last_name = account.last_name, color = "FF0000")
 	# check whether user already exists in the database, if not then add it
-	if User.objects.filter(first_name = results[0], last_name = results[1]).exists() == False:
+	if User.objects.filter(first_name = account.first_name, last_name = account.last_name).exists() == False:
 		us.save()
 	else:
-		us = User.objects.all()[0]
+		us = User.objects.filter(first_name = account.first_name, last_name = account.last_name)[0]
 
 	ms = Message(user = us, text = request.POST.get("message"), timestamp = datetime.now())
-
 	ms.save()
 
-	return index(request)
+	return chat(request)
+
+def login(request):
+	username = request.POST.get("username")
+	password = request.POST.get("password")
+
+	user = auth.authenticate(username = username, password = password)
+
+	if user is not None and user.is_active:
+		auth.login(request, user)
+		return HttpResponseRedirect("/chat/chat/")
+	else:
+		return render(request, "chat/index.html", {"error_message": "Invalid login! Try again."})
+
+def register(request):
+	username = request.POST.get("username")
+	first_name = request.POST.get("first_name")
+	last_name = request.POST.get("last_name")
+	password = request.POST.get("password")
+	passwordagain = request.POST.get("passwordagain")
+	email = request.POST.get("email")
+
+	if username == "" or password == "" or passwordagain == "" or email == "" or first_name == "" or last_name == "":
+		return render(request, "chat/index.html", {"error_message": "One or more fields were left blank!"})
+	if password != passwordagain:
+		return render(request, "chat/index.html", {"error_message": "Passwords do not match!"})
+
+	if Account.objects.filter(username = username).exists():
+		return render(request, "chat/index.html", {"error_message": "Username already exists!"})
+
+	user = Account.objects.create_user(username = username, password = password, email = email, first_name = first_name, last_name = last_name)
+	user.save()
+	return render(request, "chat/index.html", {"error_message": "Registered! You may now log in."})
